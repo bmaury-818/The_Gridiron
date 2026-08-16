@@ -286,8 +286,8 @@ th[data-key].sorted[data-dir="asc"]::after{content:" \25B4";}
       <div class="table-scroll">
         <table id="leaderboardTable">
           <thead><tr>
-            <th>Owner</th><th>Seasons</th><th>Record</th><th>Win%</th>
-            <th>🏆</th><th>🥈</th><th>🥉</th><th>4th</th>
+            <th data-key="owner">Owner</th><th data-key="seasons">Seasons</th><th>Record</th><th data-key="winPct">Win%</th>
+            <th data-key="champion">🏆</th><th data-key="runner_up">🥈</th><th data-key="third">🥉</th><th data-key="fourth">4th</th>
           </tr></thead>
           <tbody></tbody>
         </table>
@@ -320,10 +320,9 @@ th[data-key].sorted[data-dir="asc"]::after{content:" \25B4";}
     </div>
 
     <div class="card">
-      <h3>Browse a team by owner &amp; year</h3>
+      <h3>Browse a team by owner</h3>
       <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
         <select id="ownerSelect"></select>
-        <select id="yearSelect"></select>
       </div>
       <div id="teamYearDetail"></div>
     </div>
@@ -358,7 +357,7 @@ th[data-key].sorted[data-dir="asc"]::after{content:" \25B4";}
     </div>
 
     <div class="card">
-      <h3>2026 keeper eligibility, by team</h3>
+      <h3>2026 Keeper Eligibility, by Team</h3>
       <p class="section-sub" style="margin-bottom:14px;">No one has picked their 2026 keepers yet. This shows who's <em>eligible</em> to be kept and which contract year they'd enter if kept — not a decision anyone has made.</p>
       <div id="eligibilityAccordion"></div>
     </div>
@@ -435,6 +434,14 @@ window.GRIDIRON_DATA = {"owner_maps": {"owner_full": {"Dred": "Dred Torrence", "
   const $ = (sel, el) => (el||document).querySelector(sel);
   const $$ = (sel, el) => Array.from((el||document).querySelectorAll(sel));
   const fmtMoney = v => (v===null||v===undefined) ? "—" : (v<0 ? "-$"+Math.abs(v).toFixed(0) : "$"+v.toFixed(0));
+  const ownerName = name => {
+    if(!name) return "—";
+    const short = Object.keys(D.owner_maps.owner_full).find(k => D.owner_maps.owner_full[k] === name);
+    const base = short || String(name).trim();
+    const full = short ? name : (D.owner_maps.owner_full[base] || name);
+    const parts = String(full).trim().split(/\s+/);
+    return `${short || parts[0]}${parts.length > 1 ? ` ${parts[parts.length-1][0]}.` : ''}`;
+  };
   const seriesColors = ["var(--series-1)","var(--series-2)","var(--series-3)","var(--series-4)","var(--series-5)","var(--series-6)","var(--series-7)","var(--series-8)"];
   const ownerColor = (() => {
     const owners = Object.keys(D.owner_maps.owner_full);
@@ -490,7 +497,7 @@ window.GRIDIRON_DATA = {"owner_maps": {"owner_full": {"Dred": "Dred Torrence", "
     const stats = [
       {label:"Seasons tracked", value: totalSeasons, foot: years[0]+"–"+years[years.length-1]},
       {label:"Current owners", value: numOwnersCurrent, foot:"12 confirmed teams for 2026"},
-      {label:"Most championships", value: topChamp[1], foot: topChamp[0]},
+      {label:"Most championships", value: topChamp[1], foot: ownerName(topChamp[0])},
       {label:"Eligible for final keeper year", value: Object.values(D.eligibility_2026).reduce((a,o)=>a+o.can_extend_to_year3.length,0), foot:"Year 3 in 2026, across the league — no picks made yet"},
     ];
     $("#overviewStats").innerHTML = stats.map(s => `
@@ -505,7 +512,7 @@ window.GRIDIRON_DATA = {"owner_maps": {"owner_full": {"Dred": "Dred Torrence", "
     const max = champs[0][1];
     $("#champChart").innerHTML = champs.map(([name,count]) => `
       <div class="row">
-        <div class="name">${name}</div>
+        <div class="name">${ownerName(name)}</div>
         <div class="track"><div class="fill" style="width:${(count/max*100).toFixed(1)}%"></div></div>
         <div class="val">${count}</div>
       </div>`).join("");
@@ -514,7 +521,7 @@ window.GRIDIRON_DATA = {"owner_maps": {"owner_full": {"Dred": "Dred Torrence", "
     const team2026 = D.owner_maps.team_2026;
     const ownerFull = D.owner_maps.owner_full;
     const rows = Object.entries(team2026).map(([owner, team]) => `
-      <tr><td class="strong">${team}</td><td>${ownerFull[owner]}</td></tr>`).join("");
+      <tr><td class="strong">${team}</td><td>${ownerName(ownerFull[owner])}</td></tr>`).join("");
     $("#teams2026Table tbody").innerHTML = rows;
 
     renderAvgPointsChart();
@@ -624,82 +631,94 @@ window.GRIDIRON_DATA = {"owner_maps": {"owner_full": {"Dred": "Dred Torrence", "
 
   function renderHistory(){
     const rows = computeAllTimeLeaderboard();
-    $("#leaderboardTable tbody").innerHTML = rows.map(r => `
-      <tr>
-        <td class="strong">${r.owner}</td>
-        <td>${r.seasons}</td>
-        <td>${r.wins}-${r.losses}${r.ties?('-'+r.ties):''}</td>
-        <td>${(r.winPct*100).toFixed(1)}%</td>
-        <td class="strong">${r.champion||0}</td>
-        <td>${r.runner_up||0}</td>
-        <td>${r.third||0}</td>
-        <td>${r.fourth||0}</td>
-      </tr>`).join("");
+    let leaderboardSort = {key:"champion", dir:"desc"};
+    function drawLeaderboard(){
+      const sorted = rows.slice().sort((a,b)=>{
+        const av = leaderboardSort.key === "owner" ? ownerName(a.owner) : a[leaderboardSort.key];
+        const bv = leaderboardSort.key === "owner" ? ownerName(b.owner) : b[leaderboardSort.key];
+        const cmp = typeof av === "string" ? av.localeCompare(bv) : av-bv;
+        return leaderboardSort.dir === "asc" ? cmp : -cmp;
+      });
+      $("#leaderboardTable tbody").innerHTML = sorted.map(r => `
+        <tr>
+          <td class="strong">${ownerName(r.owner)}</td>
+          <td>${r.seasons}</td>
+          <td>${r.wins}-${r.losses}${r.ties?('-'+r.ties):''}</td>
+          <td>${(r.winPct*100).toFixed(1)}%</td>
+          <td class="strong">${r.champion||0}</td>
+          <td>${r.runner_up||0}</td>
+          <td>${r.third||0}</td>
+          <td>${r.fourth||0}</td>
+        </tr>`).join("");
+      $$("#leaderboardTable th[data-key]").forEach(th=>{
+        const active = th.dataset.key === leaderboardSort.key;
+        th.classList.toggle("sorted", active);
+        if(active) th.dataset.dir = leaderboardSort.dir; else th.removeAttribute("data-dir");
+      });
+    }
+    $$("#leaderboardTable th[data-key]").forEach(th=>th.addEventListener("click", ()=>{
+      const key = th.dataset.key;
+      leaderboardSort = {key, dir: leaderboardSort.key===key && leaderboardSort.dir==="desc" ? "asc" : "desc"};
+      drawLeaderboard();
+    }));
+    drawLeaderboard();
 
     renderHistoricalCharts();
 
     // champion by year table, 2004-2025
     const a = D.history_2004_2021.awards;
     let champRows = a.years.map((yr,i)=> `
-      <tr><td class="strong">${yr}</td><td>${a.champion[i]}</td><td>${a.runner_up[i]}</td><td>${a.third[i]}</td><td>${a.fourth[i]}</td></tr>`).join("");
+      <tr><td class="strong">${yr}</td><td>${ownerName(a.champion[i])}</td><td>${ownerName(a.runner_up[i])}</td><td>${ownerName(a.third[i])}</td><td>${ownerName(a.fourth[i])}</td></tr>`).join("");
     ["2022","2023","2024","2025"].forEach(yr => {
       const s = D.standings_2022_2025[yr];
       const ownerOf = teamName => (s.teams.find(t=>t.team===teamName)||{}).owner_full || teamName;
-      champRows += `<tr><td class="strong">${yr}</td><td>${ownerOf(s.champion)} <span style="color:var(--text-muted)">(${s.champion})</span></td><td>${ownerOf(s.runner_up)}</td><td>${ownerOf(s.third)}</td><td>—</td></tr>`;
+      champRows += `<tr><td class="strong">${yr}</td><td>${ownerName(ownerOf(s.champion))} <span style="color:var(--text-muted)">(${s.champion})</span></td><td>${ownerName(ownerOf(s.runner_up))}</td><td>${ownerName(ownerOf(s.third))}</td><td>—</td></tr>`;
     });
     $("#champYearTable tbody").innerHTML = champRows;
 
-    // owner/year browser
+    // owner career browser
     const ownerSelect = $("#ownerSelect");
     const allOwnersFull = Array.from(new Set([
       ...Object.keys(D.history_2004_2021.owners),
     ])).sort();
-    ownerSelect.innerHTML = allOwnersFull.map(o=>`<option value="${o}">${o}</option>`).join("");
+    ownerSelect.innerHTML = allOwnersFull.map(o=>`<option value="${o}">${ownerName(o)}</option>`).join("");
 
-    const yearSelect = $("#yearSelect");
-    function populateYears(){
+    function renderOwnerHistory(){
       const owner = ownerSelect.value;
-      const yrs = Object.keys(D.history_2004_2021.owners[owner]||{});
-      // add 2022-2025 if this owner played then
-      ["2022","2023","2024","2025"].forEach(yr=>{
-        const tmap = D.owner_maps.team_to_owner[yr];
-        const short = Object.keys(D.owner_maps.owner_full).find(k=>D.owner_maps.owner_full[k]===owner);
-        if(short && D.standings_2022_2025[yr].teams.some(t=>t.owner===short)) yrs.push(yr);
-      });
-      const uniq = Array.from(new Set(yrs)).sort();
-      yearSelect.innerHTML = uniq.map(y=>`<option value="${y}">${y}</option>`).join("");
-      renderTeamYearDetail();
-    }
-    function renderTeamYearDetail(){
-      const owner = ownerSelect.value;
-      const yr = yearSelect.value;
-      let rec;
-      if(D.history_2004_2021.owners[owner] && D.history_2004_2021.owners[owner][yr]){
-        rec = D.history_2004_2021.owners[owner][yr];
-        $("#teamYearDetail").innerHTML = `
-          <div class="kv"><span>Team name</span><strong style="color:var(--text-primary)">${rec.team}</strong></div>
-          <div class="kv"><span>Record</span><span>${rec.wins}-${rec.losses}${rec.ties?('-'+rec.ties):''}</span></div>
-          <div class="kv"><span>Points</span><span>${rec.points}</span></div>
-          <div class="kv"><span>Paid league dues that year</span><span>${rec.paid_dues===true?'Yes':(rec.paid_dues===false?'No':'—')}</span></div>`;
-      } else {
-        const short = Object.keys(D.owner_maps.owner_full).find(k=>D.owner_maps.owner_full[k]===owner);
-        const season = D.standings_2022_2025[yr];
-        const t = season && season.teams.find(t=>t.owner===short);
-        if(t){
-          $("#teamYearDetail").innerHTML = `
-            <div class="kv"><span>Team name</span><strong style="color:var(--text-primary)">${t.team}</strong></div>
-            <div class="kv"><span>Regular season rank</span><span>#${t.rank}</span></div>
-            <div class="kv"><span>Record</span><span>${t.wl}</span></div>
-            <div class="kv"><span>Points for</span><span>${t.pf}</span></div>
-            ${t.pa?`<div class="kv"><span>Points against</span><span>${t.pa}</span></div>`:''}`;
-        } else {
-          $("#teamYearDetail").innerHTML = `<p class="footer-note">No record for that owner/year combination.</p>`;
-        }
+      const short = Object.keys(D.owner_maps.owner_full).find(k=>D.owner_maps.owner_full[k]===owner);
+      const seasons = [];
+      for(const [year, rec] of Object.entries(D.history_2004_2021.owners[owner]||{})){
+        seasons.push({year, team:rec.team, wins:rec.wins||0, losses:rec.losses||0, ties:rec.ties||0, points:rec.points, paidDues:rec.paid_dues, rank:null});
       }
+      ["2022","2023","2024","2025"].forEach(yr=>{
+        const t = short && D.standings_2022_2025[yr].teams.find(t=>t.owner===short);
+        if(t){
+          const wl = t.wl.split("-").map(Number);
+          seasons.push({year:yr, team:t.team, wins:wl[0]||0, losses:wl[1]||0, ties:wl[2]||0, points:t.pf, rank:t.rank});
+        }
+      });
+      seasons.sort((a,b)=>+b.year-+a.year);
+      if(!seasons.length){
+        $("#teamYearDetail").innerHTML = `<p class="footer-note">No season history is available for this owner.</p>`;
+        return;
+      }
+      const total = seasons.reduce((sum,s)=>({wins:sum.wins+s.wins, losses:sum.losses+s.losses, ties:sum.ties+s.ties}), {wins:0,losses:0,ties:0});
+      const teamYears = [];
+      seasons.forEach(s=>{
+        let entry = teamYears.find(t=>t.team===s.team);
+        if(!entry){ entry={team:s.team,years:[]}; teamYears.push(entry); }
+        entry.years.push(s.year);
+      });
+      const record = s => `${s.wins}-${s.losses}${s.ties?('-'+s.ties):''}`;
+      const valueList = items => `<span style="display:grid; gap:4px; text-align:right;">${items.map(x=>`<span>${x}</span>`).join("")}</span>`;
+      $("#teamYearDetail").innerHTML = `
+        <div class="kv" style="align-items:start; gap:20px;"><span>Team names</span>${valueList(teamYears.map(t=>`<strong style="color:var(--text-primary)">${t.team}</strong> <span style="color:var(--text-muted)">(${t.years.join(', ')})</span>`))}</div>
+        ${seasons.some(s=>s.rank!==null) ? `<div class="kv" style="align-items:start;"><span>Regular season rank</span>${valueList(seasons.filter(s=>s.rank!==null).map(s=>`${s.year} &nbsp; #${s.rank}`))}</div>` : ''}
+        <div class="kv" style="align-items:start;"><span>Record &nbsp; <strong style="color:var(--text-primary)">${record(total)}</strong></span>${valueList(seasons.map(s=>`${s.year} &nbsp; ${record(s)}`))}</div>
+        <div class="kv" style="align-items:start;"><span>Points for</span>${valueList(seasons.map(s=>`${s.year} &nbsp; ${Number(s.points).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`))}</div>`;
     }
-    ownerSelect.addEventListener("change", populateYears);
-    yearSelect.addEventListener("change", renderTeamYearDetail);
-    populateYears();
+    ownerSelect.addEventListener("change", renderOwnerHistory);
+    renderOwnerHistory();
   }
 
   function renderHistoricalCharts(){
@@ -847,7 +866,7 @@ window.GRIDIRON_DATA = {"owner_maps": {"owner_full": {"Dred": "Dred Torrence", "
         html += `<div class="draft-team-card">
           <div class="dtc-head">
             <div class="dtc-team">${teamFull}</div>
-            <div class="dtc-owner">${ownerFull}</div>
+            <div class="dtc-owner">${ownerName(ownerFull)}</div>
           </div>
           ${keepers.length ? `<div class="dtc-subhead">🔒 Keepers</div>
           ${keepers.map(p=>`<div class="draft-pick-row keeper-row"><span class="rnd">K${p.round}</span><span class="pname">${p.player}</span></div>`).join("")}` : ''}
@@ -893,8 +912,8 @@ window.GRIDIRON_DATA = {"owner_maps": {"owner_full": {"Dred": "Dred Torrence", "
       <details class="card" style="margin-bottom:10px;">
         <summary style="cursor:pointer; list-style:none;">
           <span class="owner-card-head" style="display:inline-flex; width:calc(100% - 20px);">
-            <span class="oname"><span class="dot" style="background:${color}; display:inline-block; margin-right:8px;"></span>${data.owner_full} <span style="color:var(--text-muted); font-weight:400;">(${owner})</span></span>
-            <span class="tname">${data.team_2026} · ${eligibleTotal} eligible to keep</span>
+            <span class="oname"><span class="dot" style="background:${color}; display:inline-block; margin-right:8px;"></span>${data.team_2026} <span style="color:var(--text-muted); font-weight:400;">(${ownerName(data.owner_full)})</span></span>
+            <span class="tname">${eligibleTotal} eligible to keep</span>
           </span>
         </summary>
         <div style="margin-top:14px;">
@@ -940,7 +959,7 @@ window.GRIDIRON_DATA = {"owner_maps": {"owner_full": {"Dred": "Dred Torrence", "
         <thead><tr><th>Owner</th><th>Worksheet says (2025)</th><th>What actually happened (2025 Yahoo draft)</th></tr></thead>
         <tbody>
         ${Object.values(D.eligibility_2026).flatMap(d => (d.reconciliation_notes||[]).map(n => `
-          <tr><td class="strong">${d.owner_full}</td><td>${n.player}</td><td>${n.issue}</td></tr>
+          <tr><td class="strong">${ownerName(d.owner_full)}</td><td>${n.player}</td><td>${n.issue}</td></tr>
         `)).join("")}
         </tbody>
       </table>
@@ -963,7 +982,7 @@ window.GRIDIRON_DATA = {"owner_maps": {"owner_full": {"Dred": "Dred Torrence", "
       let head = "<thead><tr>"+labels.map(l=>`<th>${l}</th>`).join("")+"</tr></thead>";
       let body = "<tbody>"+rows.map(r => "<tr>"+cols.map(c=>{
         let v = r[c];
-        if(c==="owner_full") return `<td class="strong">${v}</td>`;
+        if(c==="owner_full") return `<td class="strong">${ownerName(v)}</td>`;
         if(c==="Weekly Wins") return `<td>${(v===null||v===undefined)?'—':v}</td>`;
         if(moneyCols.has(c) && typeof v === "number") {
           const cls = c==="Current Status" ? (v<0?' style="color:var(--critical);font-weight:600;"':(v>0?' style="color:var(--success);font-weight:600;"':'')) : '';
@@ -1000,7 +1019,7 @@ window.GRIDIRON_DATA = {"owner_maps": {"owner_full": {"Dred": "Dred Torrence", "
     const kg = r.keeper_grades;
     $("#recapContent").innerHTML = `
       <div class="card">
-        <h3>🏆 Champion: ${r.champion.team} — ${r.champion.owner}</h3>
+        <h3>🏆 Champion: ${r.champion.team} — ${ownerName(r.champion.owner)}</h3>
         <p class="section-sub" style="margin-bottom:0;">Finished ${r.champion.record}, ${r.champion.points} points, and ran the table after Week 1.</p>
       </div>
       <div class="card">
@@ -1016,10 +1035,10 @@ window.GRIDIRON_DATA = {"owner_maps": {"owner_full": {"Dred": "Dred Torrence", "
       </div>
       <div class="card">
         <h3>Keeper report card</h3>
-        <div class="kv"><span>Best preseason class</span><span>${kg.best_preseason_class.team} (${kg.best_preseason_class.owner}) — ${kg.best_preseason_class.score}</span></div>
-        <div class="kv"><span>Worst preseason class</span><span>${kg.worst_preseason_class.team} (${kg.worst_preseason_class.owner}) — ${kg.worst_preseason_class.score}</span></div>
+        <div class="kv"><span>Best preseason class</span><span>${kg.best_preseason_class.team} (${ownerName(kg.best_preseason_class.owner)}) — ${kg.best_preseason_class.score}</span></div>
+        <div class="kv"><span>Worst preseason class</span><span>${kg.worst_preseason_class.team} (${ownerName(kg.worst_preseason_class.owner)}) — ${kg.worst_preseason_class.score}</span></div>
         <div class="kv"><span>Best postseason performance</span><span>${kg.best_postseason_class.teams.join(" &amp; ")} — ${kg.best_postseason_class.score}</span></div>
-        <div class="kv"><span>Worst postseason performance</span><span>${kg.worst_postseason_class.team} (${kg.worst_postseason_class.owner}) — ${kg.worst_postseason_class.score}</span></div>
+        <div class="kv"><span>Worst postseason performance</span><span>${kg.worst_postseason_class.team} (${ownerName(kg.worst_postseason_class.owner)}) — ${kg.worst_postseason_class.score}</span></div>
         <div class="kv"><span>Hidden gem</span><span>${kg.hidden_gem}</span></div>
         <div class="kv"><span>The Dave Exception</span><span>${kg.dave_exception}</span></div>
       </div>
@@ -1028,14 +1047,14 @@ window.GRIDIRON_DATA = {"owner_maps": {"owner_full": {"Dred": "Dred Torrence", "
           <h3>Preseason keeper class rankings</h3>
           <div class="table-scroll"><table>
           <thead><tr><th>#</th><th>Team</th><th>Owner</th><th>Score</th></tr></thead>
-          <tbody>${kg.preseason_rankings.map(x=>`<tr><td>${x.rank}</td><td>${x.team}</td><td>${x.owner}</td><td>${x.score}</td></tr>`).join("")}</tbody>
+          <tbody>${kg.preseason_rankings.map(x=>`<tr><td>${x.rank}</td><td>${x.team}</td><td>${ownerName(x.owner)}</td><td>${x.score}</td></tr>`).join("")}</tbody>
           </table></div>
         </div>
         <div class="card">
           <h3>Postseason keeper performance rankings</h3>
           <div class="table-scroll"><table>
           <thead><tr><th>#</th><th>Team</th><th>Owner</th><th>Score</th></tr></thead>
-          <tbody>${kg.postseason_rankings.map(x=>`<tr><td>${x.rank}</td><td>${x.team}</td><td>${x.owner}</td><td>${x.score}</td></tr>`).join("")}</tbody>
+          <tbody>${kg.postseason_rankings.map(x=>`<tr><td>${x.rank}</td><td>${x.team}</td><td>${ownerName(x.owner)}</td><td>${x.score}</td></tr>`).join("")}</tbody>
           </table></div>
         </div>
       </div>
@@ -1302,7 +1321,7 @@ window.GRIDIRON_DATA = {"owner_maps": {"owner_full": {"Dred": "Dred Torrence", "
         $("#perfTeamTable tbody").innerHTML = rows.map(t => `
           <tr>
             <td class="strong">${t.teamName}</td>
-            <td>${t.ownerFull || '—'}</td>
+            <td>${ownerName(t.ownerFull)}</td>
             <td style="text-align:right;">${fmt1(t.expectedPreseason)}</td>
             <td style="text-align:right;">${fmt1(t.totalStartersActual)}</td>
             <td style="text-align:right;">${diffSpan(t.diff)}</td>
@@ -1322,7 +1341,7 @@ window.GRIDIRON_DATA = {"owner_maps": {"owner_full": {"Dred": "Dred Torrence", "
         $("#perfDraftDayTable tbody").innerHTML = rows.map(t => `
           <tr>
             <td class="strong">${t.teamName}</td>
-            <td>${t.ownerFull || '—'}</td>
+            <td>${ownerName(t.ownerFull)}</td>
             <td style="text-align:right;">${fmt1(t.draftDayProjPts)}</td>
             <td style="text-align:right;">${fmt1(t.regSeasonStartersActual)}</td>
             <td style="text-align:right;">${t.diffDraftDay===null||t.diffDraftDay===undefined ? '—' : diffSpan(t.diffDraftDay)}</td>
@@ -1349,7 +1368,7 @@ window.GRIDIRON_DATA = {"owner_maps": {"owner_full": {"Dred": "Dred Torrence", "
             <td class="strong">${p.name}</td>
             <td>${p.truePos}</td>
             <td>${p.teamName}</td>
-            <td>${p.ownerFull || '—'}</td>
+            <td>${ownerName(p.ownerFull)}</td>
             <td style="text-align:right;">${p.gamesStarted}</td>
             <td style="text-align:right;">${fmt1(p.totalActual)}</td>
             <td style="text-align:right;">${fmt1(p.totalProj)}</td>
@@ -1384,7 +1403,7 @@ window.GRIDIRON_DATA = {"owner_maps": {"owner_full": {"Dred": "Dred Torrence", "
       // ---- Weekly team detail table ----
       const teamSelect = $("#perfTeamSelect");
       const teamsSorted = season.teamSeasonSummary.slice().sort((a,b)=> a.teamName.localeCompare(b.teamName));
-      teamSelect.innerHTML = teamsSorted.map(t => `<option value="${t.teamId}">${t.teamName}${t.ownerFull?(' ('+t.ownerFull+')'):''}</option>`).join("");
+      teamSelect.innerHTML = teamsSorted.map(t => `<option value="${t.teamId}">${t.teamName}${t.ownerFull?(' ('+ownerName(t.ownerFull)+')'):''}</option>`).join("");
       function drawWeekTable(){
         const tid = +teamSelect.value;
         const rows = sortRows(season.teamWeeks.filter(w => w.teamId === tid), weekSort);
@@ -1412,7 +1431,7 @@ window.GRIDIRON_DATA = {"owner_maps": {"owner_full": {"Dred": "Dred Torrence", "
         $("#perfAllTeamsWeekTable tbody").innerHTML = rows.map(w => `
           <tr>
             <td class="strong">${w.teamName}</td>
-            <td>${w.ownerFull || '—'}</td>
+            <td>${ownerName(w.ownerFull)}</td>
             <td style="text-align:right;">${fmt1(w.startersProj)}</td>
             <td style="text-align:right;">${fmt1(w.startersActual)}</td>
             <td style="text-align:right;">${diffSpan(w.diff)}</td>
