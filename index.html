@@ -1100,6 +1100,7 @@ window.GRIDIRON_DATA = {"owner_maps": {"owner_full": {"Dred": "Dred Torrence", "
     let draftDaySort = {key:'diffDraftDay', dir:'desc'};
     let playerSort = {key:'diff', dir:'desc'};
     let weekSort = {key:'week', dir:'asc'};
+    let allTeamsWeekSort = {key:'startersActual', dir:'desc'};
     let posFilter = 'ALL';
     let playerSearch = '';
     let minGames = 0;
@@ -1190,21 +1191,45 @@ window.GRIDIRON_DATA = {"owner_maps": {"owner_full": {"Dred": "Dred Torrence", "
             </div>
           </div>
           <div id="perfTeamWeeklyPane" role="tabpanel" hidden>
-            <p class="section-sub" style="margin-bottom:14px;">Select a team to see its projected and actual scoring, roster output, and points left on the bench week by week.</p>
-            <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:14px;">
-              <select id="perfTeamSelect"></select>
+            <div class="seg-toggle" id="perfWeeklyViewTabs" role="tablist" aria-label="Weekly team stats view" style="margin-bottom:14px;">
+              <button class="active" data-weekly-view="team" role="tab" aria-selected="true">By team</button>
+              <button data-weekly-view="week" role="tab" aria-selected="false">By week</button>
             </div>
-            <div class="table-scroll"><table id="perfWeekTable">
-              <thead><tr>
-                <th data-key="week">Week</th>
-                <th data-key="startersProj" style="text-align:right;">Starters proj.</th>
-                <th data-key="startersActual" style="text-align:right;">Starters actual</th>
-                <th data-key="diff" style="text-align:right;">Diff</th>
-                <th data-key="allRosterActual" style="text-align:right;">All-roster actual</th>
-                <th data-key="leftOnBench" style="text-align:right;">Left on bench</th>
-              </tr></thead>
-              <tbody></tbody>
-            </table></div>
+            <div id="perfWeeklyByTeamPane" role="tabpanel">
+              <p class="section-sub" style="margin-bottom:14px;">Select a team to see its projected and actual scoring, roster output, and points left on the bench week by week.</p>
+              <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:14px;">
+                <select id="perfTeamSelect" aria-label="Select team"></select>
+              </div>
+              <div class="table-scroll"><table id="perfWeekTable">
+                <thead><tr>
+                  <th data-key="week">Week</th>
+                  <th data-key="startersProj" style="text-align:right;">Starters proj.</th>
+                  <th data-key="startersActual" style="text-align:right;">Starters actual</th>
+                  <th data-key="diff" style="text-align:right;">Diff</th>
+                  <th data-key="allRosterActual" style="text-align:right;">All-roster actual</th>
+                  <th data-key="leftOnBench" style="text-align:right;">Left on bench</th>
+                </tr></thead>
+                <tbody></tbody>
+              </table></div>
+            </div>
+            <div id="perfWeeklyByWeekPane" role="tabpanel" hidden>
+              <p class="section-sub" style="margin-bottom:14px;">Select a week to compare every team's results side by side.</p>
+              <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:14px;">
+                <select id="perfWeekSelect" aria-label="Select week"></select>
+              </div>
+              <div class="table-scroll"><table id="perfAllTeamsWeekTable">
+                <thead><tr>
+                  <th data-key="teamName">Team</th>
+                  <th data-key="ownerFull">Owner</th>
+                  <th data-key="startersProj" style="text-align:right;">Starters proj.</th>
+                  <th data-key="startersActual" style="text-align:right;">Starters actual</th>
+                  <th data-key="diff" style="text-align:right;">Diff</th>
+                  <th data-key="allRosterActual" style="text-align:right;">All-roster actual</th>
+                  <th data-key="leftOnBench" style="text-align:right;">Left on bench</th>
+                </tr></thead>
+                <tbody></tbody>
+              </table></div>
+            </div>
           </div>
         </div>
 
@@ -1377,6 +1402,41 @@ window.GRIDIRON_DATA = {"owner_maps": {"owner_full": {"Dred": "Dred Torrence", "
       attachSort("perfWeekTable", ()=>weekSort, s=>{weekSort=s;}, drawWeekTable);
       teamSelect.addEventListener("change", drawWeekTable);
       drawWeekTable();
+
+      const weekSelect = $("#perfWeekSelect");
+      const weeks = [...new Set(season.teamWeeks.map(w => w.week))].sort((a,b) => a-b);
+      weekSelect.innerHTML = weeks.map(w => `<option value="${w}">Week ${w}</option>`).join("");
+      function drawAllTeamsWeekTable(){
+        const week = +weekSelect.value;
+        const rows = sortRows(season.teamWeeks.filter(w => w.week === week), allTeamsWeekSort);
+        $("#perfAllTeamsWeekTable tbody").innerHTML = rows.map(w => `
+          <tr>
+            <td class="strong">${w.teamName}</td>
+            <td>${w.ownerFull || '—'}</td>
+            <td style="text-align:right;">${fmt1(w.startersProj)}</td>
+            <td style="text-align:right;">${fmt1(w.startersActual)}</td>
+            <td style="text-align:right;">${diffSpan(w.diff)}</td>
+            <td style="text-align:right;">${fmt1(w.allRosterActual)}</td>
+            <td style="text-align:right;">${fmt1(w.leftOnBench)}</td>
+          </tr>`).join("");
+        markSort("perfAllTeamsWeekTable", allTeamsWeekSort);
+      }
+      attachSort("perfAllTeamsWeekTable", ()=>allTeamsWeekSort, s=>{allTeamsWeekSort=s;}, drawAllTeamsWeekTable);
+      weekSelect.addEventListener("change", drawAllTeamsWeekTable);
+      drawAllTeamsWeekTable();
+
+      $$("#perfWeeklyViewTabs button").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const showTeam = btn.dataset.weeklyView === "team";
+          $$("#perfWeeklyViewTabs button").forEach(b => {
+            const active = b === btn;
+            b.classList.toggle("active", active);
+            b.setAttribute("aria-selected", String(active));
+          });
+          $("#perfWeeklyByTeamPane").hidden = !showTeam;
+          $("#perfWeeklyByWeekPane").hidden = showTeam;
+        });
+      });
     }
 
     yearSelect.addEventListener("change", draw);
