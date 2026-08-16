@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -209,7 +209,7 @@ th[data-key].sorted[data-dir="asc"]::after{content:" \25B4";}
         <div class="sub">League hub &amp; keeper tracker · commissioner Brian · <a href="https://football.fantasysports.yahoo.com/f1/384281" target="_blank" rel="noopener">Yahoo league ↗</a></div>
       </div>
     </div>
-    <button class="theme-toggle" id="themeToggle">🌙 <span id="themeLabel">Dark mode</span></button>
+    <button class="theme-toggle" id="themeToggle">☀️ <span id="themeLabel">Light mode</span></button>
   </div>
   <nav class="tabs" id="tabs">
     <button data-tab="overview" class="active">Overview</button>
@@ -414,7 +414,7 @@ window.GRIDIRON_DATA = {"owner_maps": {"owner_full": {"Dred": "Dred Torrence", "
     themeLabel.textContent = t === "dark" ? "Light mode" : "Dark mode";
     themeToggle.firstChild.textContent = t === "dark" ? "☀️ " : "🌙 ";
   }
-  let curTheme = "light";
+  let curTheme = "dark";
   setTheme(curTheme);
   themeToggle.addEventListener("click", () => {
     curTheme = curTheme === "light" ? "dark" : "light";
