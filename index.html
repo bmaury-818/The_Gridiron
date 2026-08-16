@@ -1029,32 +1029,57 @@ window.GRIDIRON_DATA = {"owner_maps": {"owner_full": {"Dred": "Dred Torrence", "
     function buildContent(season, yr){
       $("#perfContent").innerHTML = `
         <div class="card">
-          <h3>Team season summary — ${yr}</h3>
-          <p class="section-sub" style="margin-bottom:14px;">Two comparisons, side by side: starters-only (what was projected and scored by the lineup that actually played) and whole-roster (what was projected and scored by everyone drafted, starters and bench alike).</p>
-          <div class="table-scroll"><table id="perfTeamTable">
-            <thead><tr>
-              <th data-key="teamName">Team</th>
-              <th data-key="ownerFull">Owner</th>
-              <th data-key="expectedPreseason" style="text-align:right;">Expected (proj.)</th>
-              <th data-key="totalStartersActual" style="text-align:right;">Starters actual</th>
-              <th data-key="diff" style="text-align:right;">Diff</th>
-              <th data-key="totalAllRosterProj" style="text-align:right;">Roster projected</th>
-              <th data-key="totalAllRosterActual" style="text-align:right;">Roster actual</th>
-              <th data-key="diffAllRoster" style="text-align:right;">Diff</th>
-              <th data-key="totalLeftOnBench" style="text-align:right;">Left on bench</th>
-            </tr></thead>
-            <tbody></tbody>
-          </table></div>
-          <div class="footer-note" style="margin-top:14px; line-height:1.85;">
-            <strong style="color:var(--text-primary);">What each column means</strong><br>
-            <strong style="color:var(--text-primary);">Team / Owner</strong> — the team and manager for that season (team names and rosters can change year to year).<br>
-            <strong style="color:var(--text-primary);">Expected (proj.)</strong> — Yahoo's projected points for that team's <em>starting lineup</em> each week, summed across the season.<br>
-            <strong style="color:var(--text-primary);">Starters actual</strong> — what that starting lineup actually scored each week, summed across the season.<br>
-            <strong style="color:var(--text-primary);">Diff</strong> (1st) — Starters actual minus Expected. Green means the lineup out-scored its week-to-week projections over the season; red means it fell short.<br>
-            <strong style="color:var(--text-primary);">Roster projected</strong> — Yahoo's projected points for <em>every</em> player drafted onto the team that week — starters and bench together — summed across the season.<br>
-            <strong style="color:var(--text-primary);">Roster actual</strong> — what the entire roster (starters and bench together) actually scored each week, summed across the season.<br>
-            <strong style="color:var(--text-primary);">Diff</strong> (2nd) — Roster actual minus Roster projected, the same comparison as the first Diff but for the whole roster instead of just the starters.<br>
-            <strong style="color:var(--text-primary);">Left on bench</strong> — total points given up across the season by starting the wrong player at QB, TE, K, DEF, or FLEX (RB/WR), versus the best alternative sitting on the bench that week.
+          <div style="display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:14px;">
+            <h3 style="margin-bottom:0;">Team Season Stats — ${yr}</h3>
+            <div class="seg-toggle" id="perfTeamStatsTabs" role="tablist" aria-label="Team Season Stats view">
+              <button class="active" data-view="season" role="tab" aria-selected="true">Season</button>
+              <button data-view="weekly" role="tab" aria-selected="false">Weekly</button>
+            </div>
+          </div>
+          <div id="perfTeamSeasonPane" role="tabpanel">
+            <p class="section-sub" style="margin-bottom:14px;">Two comparisons, side by side: starters-only (what was projected and scored by the lineup that actually played) and whole-roster (what was projected and scored by everyone drafted, starters and bench alike).</p>
+            <div class="table-scroll"><table id="perfTeamTable">
+              <thead><tr>
+                <th data-key="teamName">Team</th>
+                <th data-key="ownerFull">Owner</th>
+                <th data-key="expectedPreseason" style="text-align:right;">Expected (proj.)</th>
+                <th data-key="totalStartersActual" style="text-align:right;">Starters actual</th>
+                <th data-key="diff" style="text-align:right;">Diff</th>
+                <th data-key="totalAllRosterProj" style="text-align:right;">Roster projected</th>
+                <th data-key="totalAllRosterActual" style="text-align:right;">Roster actual</th>
+                <th data-key="diffAllRoster" style="text-align:right;">Diff</th>
+                <th data-key="totalLeftOnBench" style="text-align:right;">Left on bench</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table></div>
+            <div class="footer-note" style="margin-top:14px; line-height:1.85;">
+              <strong style="color:var(--text-primary);">What each column means</strong><br>
+              <strong style="color:var(--text-primary);">Team / Owner</strong> — the team and manager for that season (team names and rosters can change year to year).<br>
+              <strong style="color:var(--text-primary);">Expected (proj.)</strong> — Yahoo's projected points for that team's <em>starting lineup</em> each week, summed across the season.<br>
+              <strong style="color:var(--text-primary);">Starters actual</strong> — what that starting lineup actually scored each week, summed across the season.<br>
+              <strong style="color:var(--text-primary);">Diff</strong> (1st) — Starters actual minus Expected. Green means the lineup out-scored its week-to-week projections over the season; red means it fell short.<br>
+              <strong style="color:var(--text-primary);">Roster projected</strong> — Yahoo's projected points for <em>every</em> player drafted onto the team that week — starters and bench together — summed across the season.<br>
+              <strong style="color:var(--text-primary);">Roster actual</strong> — what the entire roster (starters and bench together) actually scored each week, summed across the season.<br>
+              <strong style="color:var(--text-primary);">Diff</strong> (2nd) — Roster actual minus Roster projected, the same comparison as the first Diff but for the whole roster instead of just the starters.<br>
+              <strong style="color:var(--text-primary);">Left on bench</strong> — total points given up across the season by starting the wrong player at QB, TE, K, DEF, or FLEX (RB/WR), versus the best alternative sitting on the bench that week.
+            </div>
+          </div>
+          <div id="perfTeamWeeklyPane" role="tabpanel" hidden>
+            <p class="section-sub" style="margin-bottom:14px;">Select a team to see its projected and actual scoring, roster output, and points left on the bench week by week.</p>
+            <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:14px;">
+              <select id="perfTeamSelect"></select>
+            </div>
+            <div class="table-scroll"><table id="perfWeekTable">
+              <thead><tr>
+                <th data-key="week">Week</th>
+                <th data-key="startersProj" style="text-align:right;">Starters proj.</th>
+                <th data-key="startersActual" style="text-align:right;">Starters actual</th>
+                <th data-key="diff" style="text-align:right;">Diff</th>
+                <th data-key="allRosterActual" style="text-align:right;">All-roster actual</th>
+                <th data-key="leftOnBench" style="text-align:right;">Left on bench</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table></div>
           </div>
         </div>
 
@@ -1105,24 +1130,21 @@ window.GRIDIRON_DATA = {"owner_maps": {"owner_full": {"Dred": "Dred Torrence", "
           <p class="footer-note" id="perfPlayerCount" style="margin-top:10px;"></p>
         </div>
 
-        <div class="card">
-          <h3>Weekly team detail — ${yr}</h3>
-          <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:14px;">
-            <select id="perfTeamSelect"></select>
-          </div>
-          <div class="table-scroll"><table id="perfWeekTable">
-            <thead><tr>
-              <th data-key="week">Week</th>
-              <th data-key="startersProj" style="text-align:right;">Starters proj.</th>
-              <th data-key="startersActual" style="text-align:right;">Starters actual</th>
-              <th data-key="diff" style="text-align:right;">Diff</th>
-              <th data-key="allRosterActual" style="text-align:right;">All-roster actual</th>
-              <th data-key="leftOnBench" style="text-align:right;">Left on bench</th>
-            </tr></thead>
-            <tbody></tbody>
-          </table></div>
-        </div>
       `;
+
+      // ---- Team season/weekly view tabs ----
+      $$("#perfTeamStatsTabs button").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const showSeason = btn.dataset.view === "season";
+          $$("#perfTeamStatsTabs button").forEach(b => {
+            const active = b === btn;
+            b.classList.toggle("active", active);
+            b.setAttribute("aria-selected", String(active));
+          });
+          $("#perfTeamSeasonPane").hidden = !showSeason;
+          $("#perfTeamWeeklyPane").hidden = showSeason;
+        });
+      });
 
       // ---- Team summary table ----
       function drawTeamTable(){
