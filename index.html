@@ -792,6 +792,20 @@ window.GRIDIRON_DATA = {"owner_maps": {"owner_full": {"Dred": "Dred Torrence", "
         </table></div>`;
     }
 
+    function finalistTeamName(finish, year){
+      const place = {"1st Place":1,"2nd Place":2,"3rd Place":3,"4th Place":4}[finish];
+      const y = String(year);
+      if(+year <= 2021){
+        const awards = D.history_2004_2021.awards;
+        const awardKey = {1:"champion",2:"runner_up",3:"third",4:"fourth"}[place];
+        const index = awards.years.map(String).indexOf(y);
+        const owner = index >= 0 ? String(awards[awardKey][index]||"").trim() : "";
+        return (D.history_2004_2021.owners[owner]?.[y]||{}).team || owner || "Team unavailable";
+      }
+      const team = D.standings_2022_2025[y]?.teams.find(t=>t.rank===place);
+      return team?.team || "Team unavailable";
+    }
+
     function rankView(dataset, mode){
       const labelKey = mode === "draft" ? "finish" : "position";
       const title = mode === "draft" ? "Finalist draft slot" : "Champion roster positional rank";
@@ -804,7 +818,11 @@ window.GRIDIRON_DATA = {"owner_maps": {"owner_full": {"Dred": "Dred Torrence", "
           <thead><tr><th>${title}</th>${dataset.years.map(y=>`<th>${y}</th>`).join("")}<th>Avg.<br>04–20</th><th>Avg.<br>04–25</th></tr></thead>
           <tbody>${dataset.series.map(row=>`<tr>
             <th>${row[labelKey]}</th>
-            ${row.values.map((v,i)=>`<td ${rankCell(v,mode)} title="${row[labelKey]}, ${dataset.years[i]}: ${v}">${v}</td>`).join("")}
+            ${row.values.map((v,i)=>{
+              const year = dataset.years[i];
+              const tip = mode === "draft" ? `${row[labelKey]} ${year}: ${finalistTeamName(row[labelKey],year)}` : `${row[labelKey]}, ${year}: ${v}`;
+              return `<td ${rankCell(v,mode)} title="${tip}">${v}</td>`;
+            }).join("")}
             <td class="heatmap-average">${fmt1(row.averagePrior)}</td>
             <td class="heatmap-average strong">${fmt1(row.averagePosition)}</td>
           </tr>`).join("")}</tbody>
