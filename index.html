@@ -194,6 +194,9 @@ th[data-key].sorted[data-dir="asc"]::after{content:" \25B4";}
 .pos-filter button{background:var(--surface-2); border:1px solid var(--border); color:var(--text-secondary); padding:6px 14px; font-size:12.5px; font-weight:600; border-radius:100px; cursor:pointer; font-family:inherit;}
 .pos-filter button:hover{color:var(--text-primary);}
 .pos-filter button.active{background:var(--series-1); color:#fff; border-color:var(--series-1);}
+.record-category{margin-top:18px;}
+.record-category+.record-category{border-top:1px solid var(--border); padding-top:18px; margin-top:18px;}
+.record-category h4{margin:0 0 10px; color:var(--text-primary); font-size:15px; letter-spacing:-0.01em;}
 .diff-pos{color:var(--good); font-weight:600;}
 .diff-neg{color:var(--critical); font-weight:600;}
 </style>
@@ -934,25 +937,31 @@ window.GRIDIRON_DATA = {"owner_maps": {"owner_full": {"Dred": "Dred Torrence", "
     let html = "";
     groups.forEach(g => {
       const rows = D.record_book.filter(r => r.group === g);
+      const categories = [...new Set(rows.map(r => r.category))];
       html += `<div class="card">
         <h3>${g}</h3>
         <p class="section-sub" style="margin-bottom:14px;">${groupDescr[g]}</p>
-        <div class="table-scroll">
-        <table>
-          <thead><tr><th>Category</th><th>Type</th><th>Scope</th><th>Holder</th><th>When</th><th style="text-align:right;">Mark</th></tr></thead>
-          <tbody>
-          ${rows.map(r => `
-            <tr>
-              <td class="strong">${r.category}</td>
-              <td>${r.subtype}</td>
-              <td style="color:var(--text-muted);">${r.scope}</td>
-              <td>${r.holder}${r.note?`<br><span class="footer-note" style="margin:2px 0 0;">${r.note}</span>`:''}</td>
-              <td>${r.when}</td>
-              <td class="strong" style="text-align:right;">${r.value}</td>
-            </tr>`).join("")}
-          </tbody>
-        </table>
-        </div>
+        ${categories.map(category => {
+          const categoryRows = rows.filter(r => r.category === category);
+          return `<section class="record-category">
+            <h4>${category}</h4>
+            <div class="table-scroll">
+              <table>
+                <thead><tr><th>Type</th><th>Scope</th><th>Holder</th><th>When</th><th style="text-align:right;">Mark</th></tr></thead>
+                <tbody>
+                ${categoryRows.map(r => `
+                  <tr>
+                    <td class="strong">${r.subtype}</td>
+                    <td style="color:var(--text-muted);">${r.scope}</td>
+                    <td>${r.holder}${r.note?`<br><span class="footer-note" style="margin:2px 0 0;">${r.note}</span>`:''}</td>
+                    <td>${r.when}</td>
+                    <td class="strong" style="text-align:right;">${r.value}</td>
+                  </tr>`).join("")}
+                </tbody>
+              </table>
+            </div>
+          </section>`;
+        }).join("")}
       </div>`;
     });
     $("#recordBookContent").innerHTML = html;
