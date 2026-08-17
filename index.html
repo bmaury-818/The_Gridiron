@@ -88,6 +88,12 @@ p.section-sub{color:var(--text-secondary); font-size:13.5px; margin:0 0 20px; li
   background:var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:18px 20px; margin-bottom:16px;
 }
 .card h3{margin:0 0 12px; font-size:15px;}
+.payment-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:14px;}
+.payment-card{display:flex;flex-direction:column;align-items:center;text-align:center;background:var(--surface-1);border:1px solid var(--border);border-radius:12px;padding:16px;}
+.payment-card h4{margin:0 0 4px;font-size:16px;}
+.payment-card p{margin:0 0 12px;color:var(--text-muted);font-size:12.5px;}
+.payment-card img{display:block;width:100%;max-width:280px;height:360px;object-fit:contain;background:#fff;border-radius:10px;padding:8px;}
+@media(max-width:700px){.payment-grid{grid-template-columns:1fr}.payment-card img{height:auto;max-height:420px}}
 .grid{display:grid; gap:14px;}
 .grid.cols-4{grid-template-columns:repeat(4,1fr);}
 .grid.cols-3{grid-template-columns:repeat(3,1fr);}
@@ -388,6 +394,22 @@ th[data-key].sorted[data-dir="asc"]::after{content:" \25B4";}
       <h3>2026 season ledger <span style="font-weight:400;color:var(--text-muted);">— 2025 winnings and current-season dues</span></h3>
       <p class="section-sub" style="margin-bottom:14px;">Includes all 14 weekly high-score prizes, the 2025 season awards, $130 dues for every owner, and payments received for 2026.</p>
       <div class="table-scroll"><table id="ledger2026Table"></table></div>
+    </div>
+    <div class="card">
+      <h3>Pay 2026 league dues</h3>
+      <p class="section-sub">Season dues are $130. Scan either code below to pay Brian M.</p>
+      <div class="payment-grid">
+        <div class="payment-card">
+          <h4>Venmo</h4>
+          <p>@BrianMaury</p>
+          <img src="assets/payment-venmo.svg" alt="Venmo QR code for Brian Maury">
+        </div>
+        <div class="payment-card">
+          <h4>Zelle</h4>
+          <p>Brian Maury · phone ending 5203</p>
+          <img src="assets/payment-zelle.svg" alt="Zelle QR code for Brian Maury">
+        </div>
+      </div>
     </div>
     <div class="card">
       <h3>2025 season ledger <span style="font-weight:400;color:var(--text-muted);">— dues owed, paid, current status</span></h3>
