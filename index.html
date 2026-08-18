@@ -369,9 +369,23 @@ th[data-key].sorted[data-dir="asc"]::after{content:" \25B4";}
     </div>
 
     <div class="card">
-      <h3>2026 Keeper Eligibility, by Team</h3>
-      <p class="section-sub" style="margin-bottom:14px;">No one has picked their 2026 keepers yet. This shows who's <em>eligible</em> to be kept and which contract year they'd enter if kept — not a decision anyone has made.</p>
-      <div id="eligibilityAccordion"></div>
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:14px;">
+        <div>
+          <h3 style="margin-bottom:4px;">2026 Keepers</h3>
+          <p class="section-sub" style="margin:0;">Switch between full eligibility details and the league's declared keeper grid.</p>
+        </div>
+        <div class="seg-toggle" id="keeperViewToggle" aria-label="Keeper page view">
+          <button class="active" data-keeper-view="eligibility">Eligibility</button>
+          <button data-keeper-view="declared">Keeper View</button>
+        </div>
+      </div>
+      <div id="keeperEligibilityView">
+        <p class="section-sub" style="margin-bottom:14px;">See who is eligible to be kept and which contract year each player would enter.</p>
+        <div id="eligibilityAccordion"></div>
+      </div>
+      <div id="keeperDeclaredView" style="display:none;">
+        <div class="draft-team-grid" id="keeperViewGrid"></div>
+      </div>
     </div>
 
     <div class="card">
@@ -980,7 +994,9 @@ window.GRIDIRON_DATA = {"owner_maps": {"owner_full": {"Dred": "Dred Torrence", "
   // ================= KEEPERS =================
   function renderKeepers(){
     const acc = $("#eligibilityAccordion");
+    const keeperGrid = $("#keeperViewGrid");
     let html = "";
+    let keeperGridHtml = "";
     let totalNotes = 0;
     let totalChecked = 0;
     Object.entries(D.eligibility_2026).forEach(([owner, data]) => {
@@ -996,6 +1012,19 @@ window.GRIDIRON_DATA = {"owner_maps": {"owner_full": {"Dred": "Dred Torrence", "
       const eligibleTotal = year3.length + year2.length;
       totalNotes += (data.reconciliation_notes||[]).length;
       totalChecked += year3.length + exhausted.length;
+      keeperGridHtml += `
+        <div class="draft-team-card">
+          <div class="dtc-head">
+            <div class="dtc-team"><span class="dot" style="background:${color}; display:inline-block; margin-right:7px;"></span>${data.team_2026}</div>
+            <div class="dtc-owner">${ownerName(data.owner_full)}</div>
+          </div>
+          ${declared.length ? declared.map(k=>`
+            <div class="draft-pick-row">
+              <span class="badge-year y${k["2026_year"]}">${k["2026_year"]}</span>
+              <span class="pname">${k.player}</span>
+            </div>
+          `).join("") : '<p class="footer-note" style="margin:10px 0 0;">Awaiting selections</p>'}
+        </div>`;
       html += `
       <details class="card" style="margin-bottom:10px;">
         <summary style="cursor:pointer; list-style:none;">
@@ -1032,6 +1061,16 @@ window.GRIDIRON_DATA = {"owner_maps": {"owner_full": {"Dred": "Dred Torrence", "
       </details>`;
     });
     acc.innerHTML = html;
+    keeperGrid.innerHTML = keeperGridHtml;
+
+    const eligibilityView = $("#keeperEligibilityView");
+    const declaredView = $("#keeperDeclaredView");
+    $$("#keeperViewToggle button").forEach(button => button.addEventListener("click", () => {
+      $$("#keeperViewToggle button").forEach(b => b.classList.toggle("active", b === button));
+      const showDeclared = button.dataset.keeperView === "declared";
+      eligibilityView.style.display = showDeclared ? "none" : "block";
+      declaredView.style.display = showDeclared ? "block" : "none";
+    }));
 
     // eligibility source notes
     const notesBody = $("#dataNotesBody");
