@@ -271,7 +271,7 @@ th[data-key].sorted[data-dir="asc"]::after{content:" \25B4";}
         <div class="bar-chart" id="champChart"></div>
       </div>
       <div class="card">
-        <h3>2026 season — confirmed teams</h3>
+        <h3>2026 season — confirmed teams in draft order</h3>
         <div class="table-scroll">
           <table id="teams2026Table">
             <thead><tr><th>Team</th><th>Manager</th></tr></thead>
@@ -562,7 +562,8 @@ window.GRIDIRON_DATA = {"owner_maps": {"owner_full": {"Dred": "Dred Torrence", "
     // 2026 teams table
     const team2026 = D.owner_maps.team_2026;
     const ownerFull = D.owner_maps.owner_full;
-    const rows = Object.entries(team2026).map(([owner, team]) => `
+    const draftOrder = ["Joe", "Matt", "Eric", "Drew", "George", "Brian", "Glenn", "Dred", "Dave", "Chuck", "Alvan", "Taylor"];
+    const rows = draftOrder.map(owner => [owner, team2026[owner]]).map(([owner, team]) => `
       <tr><td class="strong">${team}</td><td>${ownerName(ownerFull[owner])}</td></tr>`).join("");
     $("#teams2026Table tbody").innerHTML = rows;
 
