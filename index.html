@@ -251,7 +251,7 @@ th[data-key].sorted[data-dir="asc"]::after{content:" \25B4";}
     <button data-tab="draft">Draft Results</button>
     <button data-tab="keepers">Keepers &amp; 2026 Eligibility</button>
     <button data-tab="finances">Finances</button>
-    <button data-tab="recap">2025 Recap</button>
+    <button data-tab="recap">Season Recaps</button>
     <button data-tab="records">Record Book</button>
     <button data-tab="performance">Performance Metrics</button>
   </nav>
@@ -543,7 +543,7 @@ window.GRIDIRON_DATA = {"owner_maps": {"owner_full": {"Dred": "Dred Torrence", "
       {label:"Seasons tracked", value: totalSeasons, foot: years[0]+"–"+years[years.length-1]},
       {label:"Current owners", value: numOwnersCurrent, foot:"12 confirmed teams for 2026"},
       {label:"Most championships", value: topChamp[1], foot: ownerName(topChamp[0])},
-      {label:"Eligible for final keeper year", value: Object.values(D.eligibility_2026).reduce((a,o)=>a+o.can_extend_to_year3.length,0), foot:"Year 3 in 2026, across the league — no picks made yet"},
+      {label:"Eligible for final keeper year", value: Object.values(D.eligibility_2026).reduce((a,o)=>a+o.can_extend_to_year3.length,0), foot:"Year 3 in 2026, across the league — draft now complete"},
     ];
     $("#overviewStats").innerHTML = stats.map(s => `
       <div class="stat-tile">
