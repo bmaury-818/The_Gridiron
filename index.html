@@ -1158,7 +1158,7 @@ window.GRIDIRON_DATA = {"owner_maps": {"owner_full": {"Dred": "Dred Torrence", "
         <div class="two-col">
           <div class="card">
             <h3>Preseason keeper class rankings</h3>
-            <p class="section-sub">Ranked independently using the commissioner-provided player cheatsheet.</p>
+            <p class="section-sub">Ranked independently using a 3rd party cheatsheet.</p>
             <div class="table-scroll"><table>
               <thead><tr><th>#</th><th>Team</th><th>Owner</th><th>Score</th><th>Avg. player rank</th><th>Keepers</th></tr></thead>
               <tbody>${keepers.map(x=>`<tr><td>${x.rank}</td><td class="strong">${x.team}</td><td>${ownerName(x.owner)}</td><td>${x.score}</td><td>${x.average_rank}</td><td>${x.keepers.join(', ')}</td></tr>`).join("")}</tbody>
@@ -1166,7 +1166,7 @@ window.GRIDIRON_DATA = {"owner_maps": {"owner_full": {"Dred": "Dred Torrence", "
           </div>
           <div class="card">
             <h3>Independent draft grades</h3>
-            <p class="section-sub">Yahoo's draft grades are intentionally excluded. ${leader.team} opens at No. 1.</p>
+            <p class="section-sub">Grades determined using full context of the league and ignoring the Yahoo draft grades.</p>
             <div class="table-scroll"><table>
               <thead><tr><th>#</th><th>Team</th><th>Owner</th><th>Grade</th><th>Score</th><th>Best value</th></tr></thead>
               <tbody>${drafts.map(x=>`<tr><td>${x.rank}</td><td class="strong">${x.team}</td><td>${ownerName(x.owner)}</td><td><strong>${x.grade}</strong></td><td>${x.score}</td><td>${x.best_value || '—'}</td></tr>`).join("")}</tbody>
